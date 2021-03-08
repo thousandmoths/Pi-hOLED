@@ -3,8 +3,6 @@
 import json
 import subprocess
 import time
-import socket
-import psutil
 import requests
 # Import Blinka
 from board import SCL, SDA
@@ -54,24 +52,28 @@ def display_screen_cpu():
         clear_display()
         # Define the content to be displayed
         text = "CPU Temp: " + get_cpu_temp()
-        draw.text((0,0), 
+        draw.text((x, top), 
             text, font=font, fill=255)
         text = "CPU Speed: " + get_cpu_speed()
-        draw.text((0,10), 
+        draw.text((x, top + 8), 
             text, font=font, fill=255)
         text = "CPU Load: " + get_cpu_load()
-        draw.text((0,20), 
+        draw.text((x, top + 16), 
             text, font=font, fill=255)
         text = get_cpu_mem()
-        draw.text((0,30), 
+        draw.text((x, top + 24), 
             text, font=font, fill=255)
     
-    # Draw the display
-    oled.image(image)
-    oled.show()
-    time.sleep(1)
+        # Draw the display
+        oled.image(image)
+        oled.show()
+        time.sleep(1)
 
 def display_screen_pihole():
+    cmd = "hostname | tr -d \'\\n\'"
+    HOST = subprocess.check_output(cmd, shell=True).decode("utf-8")
+    cmd = "hostname -I | cut -d\' \' -f1 | tr -d \'\\n\'"
+    IP = subprocess.check_output(cmd, shell=True).decode("utf-8")
     for i in range(DURATION):
         clear_display()
         try:
@@ -84,14 +86,14 @@ def display_screen_pihole():
             time.sleep(1)
             continue
  
-    draw.text((x, top), "IP: " + str(IP) +
-              " (" + HOST + ")", font=font, fill=255)
-    draw.text((x, top + 8), "Ads Blocked: " +
-              str(ADSBLOCKED), font=font, fill=255)
-    draw.text((x, top + 16), "Clients:     " +
-              str(CLIENTS), font=font, fill=255)
-    draw.text((x, top + 24), "DNS Queries: " +
-              str(DNSQUERIES), font=font, fill=255)
+        draw.text((x, top), "IP: " + str(IP) +
+                " (" + HOST + ")", font=font, fill=255)
+        draw.text((x, top + 8), "Ads Blocked: " +
+                str(ADSBLOCKED), font=font, fill=255)
+        draw.text((x, top + 16), "Clients:     " +
+                str(CLIENTS), font=font, fill=255)
+        draw.text((x, top + 24), "DNS Queries: " +
+                str(DNSQUERIES), font=font, fill=255)
     
     # Draw the display
     oled.image(image)
@@ -105,6 +107,15 @@ i2c = busio.I2C(SCL, SDA)
 # The first two parameters are the pixel width and pixel height.  Change these
 # to the right size for your display!
 oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3c)
+
+# Draw some shapes.
+# First define some constants to allow easy resizing of shapes.
+padding = -2
+top = padding
+bottom = oled.height - padding
+# Move left to right keeping track of the current x position
+# for drawing shapes.
+x = 0
 
 # Load fonts.
 font = ImageFont.truetype("OpenSans-Bold.ttf", 8)
